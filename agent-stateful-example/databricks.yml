@@ -1,0 +1,83 @@
+bundle:
+  name: agent_stateful_example
+
+resources:
+  apps:
+    agent_stateful_example:
+      name: "agent-stateful-example"
+      description: "Stateful LangGraph agent with user-scoped and agent-scoped memory"
+      source_code_path: ./
+      config:
+        command: ["uv", "run", "start-app"]
+        env:
+          - name: MLFLOW_TRACKING_URI
+            value: "databricks"
+          - name: MLFLOW_REGISTRY_URI
+            value: "databricks-uc"
+          - name: API_PROXY
+            value: "http://localhost:8000/invocations"
+          - name: CHAT_APP_PORT
+            value: "3000"
+          - name: CHAT_PROXY_TIMEOUT_SECONDS
+            value: "300"
+          - name: MLFLOW_EXPERIMENT_ID
+            value_from: "experiment"
+          - name: LOG_LEVEL
+            value: "INFO"
+          - name: DATABRICKS_EMBEDDING_ENDPOINT
+            value: "databricks-gte-large-en"
+          - name: LAKEBASE_AGENT_MEMORY_SCHEMA
+            value: "memories"
+          # User-scoped memory (read/write) — autoscaling Lakebase project
+          - name: LAKEBASE_USER_ENDPOINT
+            value_from: "postgres-user"
+          # Agent-scoped memory (read-only) — autoscaling Lakebase project
+          - name: LAKEBASE_AGENT_ENDPOINT
+            value_from: "postgres-agent"
+
+      resources:
+        - name: 'experiment'
+          experiment:
+            experiment_id: "<your-experiment-id>"
+            permission: 'CAN_MANAGE'
+        - name: 'postgres-user'
+          postgres:
+            branch: "projects/<your-user-memory-project>/branches/<your-user-memory-branch>"
+            database: "projects/<your-user-memory-project>/branches/<your-user-memory-branch>/databases/databricks-postgres"
+            permission: 'CAN_CONNECT_AND_CREATE'
+        - name: 'postgres-agent'
+          postgres:
+            branch: "projects/<your-agent-memory-project>/branches/<your-agent-memory-branch>"
+            database: "projects/<your-agent-memory-project>/branches/<your-agent-memory-branch>/databases/databricks-postgres"
+            permission: 'CAN_CONNECT_AND_CREATE'
+        - name: 'you-com-search'
+          uc_securable:
+            securable_type: 'CONNECTION'
+            securable_full_name: 'you-com-search'
+            permission: 'USE_CONNECTION'
+        - name: 'python-exec'
+          uc_securable:
+            securable_type: 'FUNCTION'
+            securable_full_name: 'system.ai.python_exec'
+            permission: 'EXECUTE'
+        - name: 'expense-data'
+          genie_space:
+            name: '<your-genie-space-name>'
+            space_id: '<your-genie-space-id>'
+            permission: 'CAN_RUN'
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: <your-workspace-url>
+
+  prod:
+    mode: production
+    workspace:
+      host: <your-workspace-url>
+    resources:
+      apps:
+        agent_stateful_example:
+          name: agent-stateful-example

@@ -1,0 +1,15 @@
+.env
+.env.local
+.databricks/
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+.next/
+mlruns/
+mlflow.db
+uv.lock
+*.egg-info/
+dist/
+build/
+.ipynb_checkpoints/
