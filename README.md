@@ -1,4 +1,4 @@
-# Databricks Agent Memory Pipeline
+# Databricks Agents <> Lakebase Memory Pipeline
 
 Code corresponding to the demo of **Agents with Memory on Databricks**, showing how [Lakebase-backed](https://docs.databricks.com/en/lakebase/index.html) long-term memory transforms a basic stateless agent into a personalized, context-aware assistant that compounds and improves over time due to [memory scaling](https://www.databricks.com/blog/memory-scaling-ai-agents)
 
