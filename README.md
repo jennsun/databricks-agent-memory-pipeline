@@ -6,7 +6,7 @@ Code corresponding to the demo of **Agents with Memory on Databricks**, showing 
 
 This repository contains an example memory setup for a production-ready agent memory pipeline across your Databricks workspace:
 
-[TODO: insert diagram here]
+<img width="1026" height="439" alt="image" src="https://github.com/user-attachments/assets/14680ddb-1a7b-48cb-8c5f-5681d96b5efe" />
 
 ### The Story
 
