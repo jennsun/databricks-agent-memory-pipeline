@@ -28,6 +28,7 @@ from agent_server.utils import (
     process_agent_astream_events,
 )
 from agent_server.utils_memory import (
+    build_memory_preamble,
     get_lakebase_access_error_message,
     init_lakebase_config,
     lakebase_context,
@@ -59,6 +60,7 @@ async def init_agent(
     store: BaseStore,
     workspace_client: Optional[WorkspaceClient] = None,
     checkpointer: Optional[Any] = None,
+    system_prompt_addition: str = "",
 ):
     tools = [get_current_time] + memory_tools()
     # To use MCP server tools instead, uncomment the below lines:
@@ -70,10 +72,14 @@ async def init_agent(
 
     model = ChatDatabricks(endpoint=LLM_ENDPOINT_NAME)
 
+    full_system_prompt = SYSTEM_PROMPT
+    if system_prompt_addition:
+        full_system_prompt = f"{SYSTEM_PROMPT}\n\n{system_prompt_addition}"
+
     return create_agent(
         model=model,
         tools=tools,
-        system_prompt=SYSTEM_PROMPT,
+        system_prompt=full_system_prompt,
         checkpointer=checkpointer,
         store=store,
         state_schema=StatefulAgentState,
@@ -108,9 +114,15 @@ async def stream_handler(
         async with lakebase_context(LAKEBASE_CONFIG) as (checkpointer, store):
             config["configurable"]["store"] = store
 
+            memory_preamble = await build_memory_preamble(store=store)
+
             # By default, uses service principal credentials.
             # For on-behalf-of user authentication, pass get_user_workspace_client() to init_agent.
-            agent = await init_agent(store=store, checkpointer=checkpointer)
+            agent = await init_agent(
+                store=store,
+                checkpointer=checkpointer,
+                system_prompt_addition=memory_preamble,
+            )
 
             async for event in process_agent_astream_events(
                 agent.astream(input_state, config, stream_mode=["updates", "messages"])

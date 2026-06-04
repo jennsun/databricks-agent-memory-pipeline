@@ -28,12 +28,17 @@ resources:
             value: "databricks-gte-large-en"
           - name: LAKEBASE_AGENT_MEMORY_SCHEMA
             value: "memories"
-          # User-scoped memory (read/write) — autoscaling Lakebase project
+          # User-scoped memory (read/write) — autoscaling project
           - name: LAKEBASE_USER_ENDPOINT
             value_from: "postgres-user"
-          # Agent-scoped memory (read-only) — autoscaling Lakebase project
+          # Agent-scoped memory (read-only) — autoscaling project
           - name: LAKEBASE_AGENT_ENDPOINT
             value_from: "postgres-agent"
+          # Chat UI source. Override if you fork the e2e-chatbot frontend.
+          - name: CHATBOT_CLONE_REPO
+            value: "https://github.com/databricks/app-templates.git"
+          - name: CHATBOT_CLONE_BRANCH
+            value: "main"
 
       resources:
         - name: 'experiment'

@@ -29,7 +29,9 @@ from agent_server.utils import (
     process_agent_astream_events,
 )
 from agent_server.utils_memory import (
+    USER_NAMESPACE_PREFIX,
     agent_store_context,
+    build_memory_preamble,
     get_lakebase_access_error_message,
     get_user_id,
     init_agent_lakebase_config,
@@ -132,6 +134,7 @@ async def init_agent(
     user_store: BaseStore,
     workspace_client: Optional[WorkspaceClient] = None,
     checkpointer: Optional[Any] = None,
+    system_prompt_addition: str = "",
 ):
     wc = workspace_client or sp_workspace_client
     tools = [get_current_time] + memory_tools()
@@ -139,10 +142,14 @@ async def init_agent(
 
     model = _SanitizedChatDatabricks(endpoint=LLM_ENDPOINT_NAME)
 
+    full_system_prompt = SYSTEM_PROMPT
+    if system_prompt_addition:
+        full_system_prompt = f"{SYSTEM_PROMPT}\n\n{system_prompt_addition}"
+
     return create_agent(
         model=model,
         tools=tools,
-        system_prompt=SYSTEM_PROMPT,
+        system_prompt=full_system_prompt,
         checkpointer=checkpointer,
         store=user_store,
         state_schema=StatefulAgentState,
@@ -189,9 +196,17 @@ async def stream_handler(
             config["configurable"]["user_store"] = user_store
             config["configurable"]["agent_store"] = agent_store
 
+            user_namespace = (USER_NAMESPACE_PREFIX, user_id) if user_id else None
+            memory_preamble = await build_memory_preamble(
+                user_store=user_store,
+                user_namespace=user_namespace,
+                agent_store=agent_store,
+            )
+
             agent = await init_agent(
                 user_store=user_store,
                 checkpointer=checkpointer,
+                system_prompt_addition=memory_preamble,
             )
 
             async for event in process_agent_astream_events(

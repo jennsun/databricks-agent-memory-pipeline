@@ -139,6 +139,7 @@ class ProcessManager:
         already_cloned = Path("e2e-chatbot-app-next").exists()
         if already_cloned:
             self.apply_theme_overrides()
+            self.customize_greeting()
             return True
 
         print("Cloning e2e-chatbot-app-next...")
@@ -172,7 +173,23 @@ class ProcessManager:
         Path("temp-app-templates/e2e-chatbot-app-next").rename("e2e-chatbot-app-next")
         shutil.rmtree("temp-app-templates", ignore_errors=True)
         self.apply_theme_overrides()
+        self.customize_greeting()
         return True
+
+    def customize_greeting(self):
+        """Replace the chatbot greeting headline. Idempotent."""
+        greeting_path = Path("e2e-chatbot-app-next/client/src/components/greeting.tsx")
+        if not greeting_path.exists():
+            return
+        try:
+            content = greeting_path.read_text()
+        except OSError:
+            return
+        original = "What would you like to know?"
+        replacement = "Agent Memory Admin App"
+        if original in content:
+            greeting_path.write_text(content.replace(original, replacement))
+            print("✓ Customized chatbot greeting")
 
     def apply_theme_overrides(self):
         """Append a dark-red theme override to the cloned chatbot's index.css.

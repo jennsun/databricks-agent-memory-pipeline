@@ -30,6 +30,10 @@ resources:
             value: "INFO"
           - name: DATABRICKS_EMBEDDING_ENDPOINT
             value: "databricks-gte-large-en"
+          - name: CHATBOT_CLONE_REPO
+            value: "https://github.com/databricks/app-templates.git"
+          - name: CHATBOT_CLONE_BRANCH
+            value: "main"
 
       # Resources which this app has access to
       resources:

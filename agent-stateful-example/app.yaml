@@ -1,0 +1,33 @@
+command: ["uv", "run", "start-app"]
+# databricks apps listen by default on port 8000
+
+env:
+  - name: MLFLOW_TRACKING_URI
+    value: "databricks"
+  - name: MLFLOW_REGISTRY_URI
+    value: "databricks-uc"
+  - name: API_PROXY
+    value: "http://localhost:8000/invocations"
+  - name: CHAT_APP_PORT
+    value: "3000"
+  - name: CHAT_PROXY_TIMEOUT_SECONDS
+    value: "300"
+  - name: MLFLOW_EXPERIMENT_ID
+    valueFrom: "experiment"
+  - name: LOG_LEVEL
+    value: "INFO"
+  - name: DATABRICKS_EMBEDDING_ENDPOINT
+    value: "databricks-gte-large-en"
+  - name: LAKEBASE_AGENT_MEMORY_SCHEMA
+    value: "memories"
+  # User-scoped memory (read/write) — autoscaling project
+  - name: LAKEBASE_USER_ENDPOINT
+    valueFrom: "postgres-user"
+  # Agent-scoped memory (read-only at runtime) — autoscaling project
+  - name: LAKEBASE_AGENT_ENDPOINT
+    valueFrom: "postgres-agent"
+  # Chat UI source. Override if you fork the e2e-chatbot frontend.
+  - name: CHATBOT_CLONE_REPO
+    value: "https://github.com/databricks/app-templates.git"
+  - name: CHATBOT_CLONE_BRANCH
+    value: "main"

@@ -17,8 +17,8 @@ from databricks_ai_bridge.lakebase import (
 
 SP_CLIENT_ID = "<your-app-service-principal-client-id>"
 MEMORY_SCHEMA = os.getenv("LAKEBASE_AGENT_MEMORY_SCHEMA", "memories")
-PROJECT = "<your-agent-memory-project>"
-BRANCH = "<your-agent-memory-branch>"
+PROJECT = "memories-agent"
+BRANCH = "production"
 
 
 def main():
