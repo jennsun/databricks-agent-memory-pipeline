@@ -12,6 +12,7 @@ dependencies = [
     "uvicorn>=0.41.0",
     "databricks-langchain[memory]>=0.19.0",
     "databricks-ai-bridge[agent-server]>=0.19.0",
+    "databricks-openai",
     "databricks-sdk>=0.79.0",
     "databricks-agents>=1.9.3",
     "mlflow>=3.10.1",
@@ -20,6 +21,13 @@ dependencies = [
     "python-dotenv>=1.2.1",
     "opentelemetry-exporter-otlp-proto-grpc>=1.25.0",
 ]
+
+# Track databricks-openai from main to pick up the merged fix for
+# https://github.com/databricks/databricks-ai-bridge/pull/435 (imports
+# VectorSearchIndex from its canonical module). Once a new databricks-openai
+# release ships with this fix, switch back to the registry version.
+[tool.uv.sources]
+databricks-openai = { git = "https://github.com/databricks/databricks-ai-bridge.git", branch = "main", subdirectory = "integrations/openai" }
 
 [build-system]
 requires = ["hatchling"]
