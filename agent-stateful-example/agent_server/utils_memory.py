@@ -277,7 +277,7 @@ def memory_tools():
     """Returns filesystem-style memory tools.
 
     User-scoped (read/write): ls_memories, read_memory, write_memory, edit_memory,
-    delete_memory, search_memories.
+    delete_memory, search_user_memories.
     Agent-scoped (read-only): ls_agent_memories, read_agent_memory, search_agent_memories.
 
     Paths must live under /memories/ and end with .md. By convention, organize as:
@@ -484,7 +484,7 @@ def memory_tools():
         return f"Deleted {normalized}."
 
     @tool
-    async def search_memories(query: str, config: RunnableConfig) -> str:
+    async def search_user_memories(query: str, config: RunnableConfig) -> str:
         """Semantic search across all your memory files.
 
         Args:
@@ -582,7 +582,7 @@ def memory_tools():
         write_memory,
         edit_memory,
         delete_memory,
-        search_memories,
+        search_user_memories,
         ls_agent_memories,
         read_agent_memory,
         search_agent_memories,

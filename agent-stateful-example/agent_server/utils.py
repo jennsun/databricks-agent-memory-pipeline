@@ -57,12 +57,48 @@ def _mcp_servers(workspace_client: WorkspaceClient) -> list[DatabricksMCPServer]
         ),
         DatabricksMCPServer(
             name="expense-data",
-            url=f"{host_name}/api/2.0/mcp/genie/<your-genie-space-id>",
+            url=f"{host_name}/api/2.0/mcp/genie/01f15172b4f911ffb116cfffb242a1ce",
             workspace_client=workspace_client,
             handle_tool_error=True,
             timeout=60.0,
         ),
     ]
+
+
+def _wrap_tool_with_error_catch(tool):
+    """Make a tool surface any exception as a tool-result string instead of raising.
+
+    LangGraph's default ToolNode only catches ToolInvocationError. An uncaught
+    McpError (PERMISSION_DENIED, transient MCP failure, etc.) propagates up
+    and ends the turn, leaving the checkpoint with a `tool_use` block that
+    has no matching `tool_result`. The next turn then 400s with
+    "tool_use ids without tool_result blocks". Catching here keeps the
+    checkpoint consistent and lets the agent recover.
+    """
+    original_coroutine = getattr(tool, "coroutine", None)
+    if original_coroutine is None:
+        return tool
+
+    response_format = getattr(tool, "response_format", "content")
+
+    async def safe_coroutine(*args, **kwargs):
+        try:
+            return await original_coroutine(*args, **kwargs)
+        except Exception as e:
+            logging.warning("Tool '%s' raised %s: %s", tool.name, type(e).__name__, e)
+            error_msg = f"Tool '{tool.name}' failed: {type(e).__name__}: {e}"
+            # When response_format='content_and_artifact', the coroutine must
+            # return (content, artifact). Returning a bare string breaks LangChain
+            # with "a two-tuple of the message content and raw tool output is expected".
+            if response_format == "content_and_artifact":
+                return error_msg, None
+            return error_msg
+
+    try:
+        tool.coroutine = safe_coroutine
+    except Exception:
+        logging.warning("Could not wrap coroutine on tool '%s'", tool.name)
+    return tool
 
 
 async def load_mcp_tools(workspace_client: WorkspaceClient) -> list:
@@ -71,7 +107,8 @@ async def load_mcp_tools(workspace_client: WorkspaceClient) -> list:
     for server in _mcp_servers(workspace_client):
         try:
             client = DatabricksMultiServerMCPClient([server])
-            tools.extend(await client.get_tools())
+            server_tools = await client.get_tools()
+            tools.extend(_wrap_tool_with_error_catch(t) for t in server_tools)
             logging.info("Loaded MCP tools from '%s'", server.name)
         except Exception:
             logging.warning("Failed to fetch tools from MCP server '%s'. Skipping.", server.name, exc_info=True)
@@ -303,7 +340,14 @@ async def process_agent_astream_events(
                                 response=_response_obj(),
                             )
 
-                        text = msg.content
+                        # When deltas already streamed the text, reuse the exact
+                        # accumulated stream content so the client can dedupe the
+                        # redundant output_item.done. msg.content may differ in
+                        # formatting (list-of-blocks vs string) and break dedup.
+                        if active_text_item_id and active_text_content:
+                            text = active_text_content
+                        else:
+                            text = msg.content if isinstance(msg.content, str) else str(msg.content)
                         item_id = active_text_item_id or str(uuid_utils.uuid7())
 
                         if not active_text_item_id:

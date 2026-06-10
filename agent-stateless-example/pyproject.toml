@@ -10,7 +10,7 @@ requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.129.0",
     "uvicorn>=0.41.0",
-    "databricks-langchain>=0.17.0",
+    "databricks-langchain>=0.20.0",
     "databricks-agents>=1.9.3",
     "mlflow>=3.10.0",
     "langgraph>=1.1.0",
@@ -35,6 +35,15 @@ setup = [
 
 [tool.uv]
 default-groups = ["dev", "setup"]
+
+# Pin databricks-ai-bridge/langchain/openai to the 0.20.0 release commit
+# (databricks-ai-bridge 0.20.0 / databricks-langchain 0.20.0 / databricks-openai 0.16.0).
+# The Databricks PyPI proxy used by Databricks Apps hasn't mirrored 0.20.0
+# from public PyPI yet. Drop this block once the proxy syncs.
+[tool.uv.sources]
+databricks-ai-bridge = { git = "https://github.com/databricks/databricks-ai-bridge.git", rev = "827ae73782c0422e17baf6d4f8ec16901d32418a" }
+databricks-langchain = { git = "https://github.com/databricks/databricks-ai-bridge.git", rev = "827ae73782c0422e17baf6d4f8ec16901d32418a", subdirectory = "integrations/langchain" }
+databricks-openai = { git = "https://github.com/databricks/databricks-ai-bridge.git", rev = "827ae73782c0422e17baf6d4f8ec16901d32418a", subdirectory = "integrations/openai" }
 
 [project.scripts]
 quickstart = "scripts.quickstart:main"
