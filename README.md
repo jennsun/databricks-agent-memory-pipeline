@@ -10,6 +10,9 @@ This repository contains an example memory setup for a production-ready agent me
 
 <img width="1512" height="667" alt="image" src="https://github.com/user-attachments/assets/6aa8c4b7-93fc-4ac8-b10f-97a727acfea8" />
 
+Get user distillation job results via visual output
+<img width="915" height="353" alt="image" src="https://github.com/user-attachments/assets/a82b944b-68dc-469f-899f-887074d1a852" />
+
 ### The Story
 
 Both `agent-stateless-example` and `agent-stateful-example` have access to the **same tools** (web search, code execution, and a Genie space for querying structured data). The difference is **memory**:
