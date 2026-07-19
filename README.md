@@ -1,5 +1,8 @@
 # Databricks Agents <> Lakebase Memory Pipeline
 
+Watch the Data AI Summit Presentation: https://www.databricks.com/dataaisummit/session/why-vector-stores-are-not-enough-using-lakebase-durable-memory-layer
+Watch the Agent Memory VectorLab Podcast: https://www.youtube.com/watch?v=NBblAEH9Y8s&t=1938s
+
 Code corresponding to the demo of **Agents with Memory on Databricks**, showing how [Lakebase-backed](https://docs.databricks.com/en/lakebase/index.html) long-term memory transforms a basic stateless agent into a personalized, context-aware assistant that compounds and improves over time due to [memory scaling](https://www.databricks.com/blog/memory-scaling-ai-agents)
 
 ## Overview
