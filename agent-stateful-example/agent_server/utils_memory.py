@@ -66,6 +66,26 @@ def get_user_id(request: ResponsesAgentRequest) -> Optional[str]:
     return None
 
 
+def sanitize_namespace_label(label: Optional[str]) -> Optional[str]:
+    """Make a user_id safe to use as a LangGraph store namespace label.
+
+    LangGraph reserves '.' as its namespace hierarchy separator and rejects
+    labels containing it (langgraph.store.base._validate_namespace). But in
+    Databricks Apps the user_id is the caller's email (e.g.
+    'first.last@company.com'), so every real user would crash on the first
+    memory write.
+
+    We percent-encode the period so the result contains no '.'. Encoding '%'
+    first keeps the mapping injective: distinct user_ids always produce distinct
+    labels, so two different users can never collide onto the same memory
+    namespace. (A lossy replace like '.'->'_' would map 'a.b@x.com' and
+    'a_b@x.com' to the same label and leak memories between them.)
+    """
+    if not label:
+        return label
+    return label.replace("%", "%25").replace(".", "%2E")
+
+
 def get_lakebase_access_error_message(lakebase_description: str) -> str:
     if _is_databricks_app_env():
         app_name = os.getenv("DATABRICKS_APP_NAME")
