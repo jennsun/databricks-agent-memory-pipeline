@@ -41,28 +41,68 @@ def _is_databricks_app_env() -> bool:
 
 
 def _mcp_servers(workspace_client: WorkspaceClient) -> list[DatabricksMCPServer]:
+    """Build the MCP server list from environment configuration.
+
+    Only ``system-ai`` (built-in UC functions, e.g. python_exec) is always on.
+    Everything else is opt-in so the app deploys to any workspace without
+    editing source:
+
+    - ``GENIE_SPACE_ID``: attach a Genie space tool for that space id. Omit to
+      run without a Genie tool.
+    - ``GENIE_SPACE_NAME``: optional display name for the Genie server (default
+      ``"genie"``).
+    - ``GENIE_MCP_TIMEOUT``: optional per-call timeout in seconds (default 60).
+    - ``MCP_EXTERNAL_CONNECTIONS``: comma-separated Unity Catalog connection
+      names to expose as external MCP servers (e.g. ``"you-com-search"``). Each
+      named connection must already exist in the workspace. Omit for none.
+    """
     host_name = get_databricks_host_from_env()
-    return [
+
+    servers = [
         DatabricksMCPServer(
             name="system-ai",
             url=f"{host_name}/api/2.0/mcp/functions/system/ai",
             workspace_client=workspace_client,
             handle_tool_error=True,
         ),
-        DatabricksMCPServer(
-            name="you-com-search",
-            url=f"{host_name}/api/2.0/mcp/external/you-com-search",
-            workspace_client=workspace_client,
-            handle_tool_error=True,
-        ),
-        DatabricksMCPServer(
-            name="expense-data",
-            url=f"{host_name}/api/2.0/mcp/genie/01f15172b4f911ffb116cfffb242a1ce",
-            workspace_client=workspace_client,
-            handle_tool_error=True,
-            timeout=60.0,
-        ),
     ]
+
+    for connection in _split_env_list(os.getenv("MCP_EXTERNAL_CONNECTIONS")):
+        servers.append(
+            DatabricksMCPServer(
+                name=connection,
+                url=f"{host_name}/api/2.0/mcp/external/{connection}",
+                workspace_client=workspace_client,
+                handle_tool_error=True,
+            )
+        )
+
+    genie_space_id = os.getenv("GENIE_SPACE_ID")
+    if genie_space_id:
+        try:
+            genie_timeout = float(os.getenv("GENIE_MCP_TIMEOUT", "60"))
+        except ValueError:
+            genie_timeout = 60.0
+        servers.append(
+            DatabricksMCPServer(
+                name=os.getenv("GENIE_SPACE_NAME", "genie"),
+                url=f"{host_name}/api/2.0/mcp/genie/{genie_space_id}",
+                workspace_client=workspace_client,
+                handle_tool_error=True,
+                timeout=genie_timeout,
+            )
+        )
+    else:
+        logging.info("GENIE_SPACE_ID not set; skipping Genie MCP server.")
+
+    return servers
+
+
+def _split_env_list(value: Optional[str]) -> list[str]:
+    """Parse a comma-separated env var into a list of trimmed, non-empty items."""
+    if not value:
+        return []
+    return [item.strip() for item in value.split(",") if item.strip()]
 
 
 def _wrap_tool_with_error_catch(tool):

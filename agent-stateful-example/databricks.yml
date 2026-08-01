@@ -28,6 +28,18 @@ resources:
             value: "databricks-gte-large-en"
           - name: LAKEBASE_AGENT_MEMORY_SCHEMA
             value: "memories"
+          # Genie space tool (optional). Set to your Genie space id to attach a
+          # Genie tool; leave unset to run without one. Must match the space_id
+          # granted in the 'genie-space' resource below.
+          - name: GENIE_SPACE_ID
+            value: "<your-genie-space-id>"
+          - name: GENIE_SPACE_NAME
+            value: "genie"
+          # External MCP connections (optional): comma-separated UC connection
+          # names to expose (e.g. "you-com-search"). Each must already exist in
+          # the workspace and be granted below. Leave unset for none.
+          # - name: MCP_EXTERNAL_CONNECTIONS
+          #   value: "you-com-search"
           # User-scoped memory (read/write) — autoscaling project
           - name: LAKEBASE_USER_ENDPOINT
             value_from: "postgres-user"
@@ -55,17 +67,20 @@ resources:
             branch: "projects/<your-agent-memory-project>/branches/<your-agent-memory-branch>"
             database: "projects/<your-agent-memory-project>/branches/<your-agent-memory-branch>/databases/databricks-postgres"
             permission: 'CAN_CONNECT_AND_CREATE'
-        - name: 'you-com-search'
-          uc_securable:
-            securable_type: 'CONNECTION'
-            securable_full_name: 'you-com-search'
-            permission: 'USE_CONNECTION'
+        # Optional: grant each external connection named in
+        # MCP_EXTERNAL_CONNECTIONS. Uncomment and repeat per connection.
+        # - name: 'you-com-search'
+        #   uc_securable:
+        #     securable_type: 'CONNECTION'
+        #     securable_full_name: 'you-com-search'
+        #     permission: 'USE_CONNECTION'
         - name: 'python-exec'
           uc_securable:
             securable_type: 'FUNCTION'
             securable_full_name: 'system.ai.python_exec'
             permission: 'EXECUTE'
-        - name: 'expense-data'
+        # Optional: grant the Genie space referenced by GENIE_SPACE_ID above.
+        - name: 'genie-space'
           genie_space:
             name: '<your-genie-space-name>'
             space_id: '<your-genie-space-id>'
