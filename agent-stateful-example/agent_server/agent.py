@@ -38,6 +38,7 @@ from agent_server.utils_memory import (
     init_user_lakebase_config,
     lakebase_context,
     memory_tools,
+    sanitize_namespace_label,
 )
 
 logger = logging.getLogger(__name__)
@@ -181,9 +182,15 @@ async def stream_handler(
     if not user_id:
         logger.warning("No user_id provided - memory features will not be available")
 
+    # LangGraph store namespace labels cannot contain periods, but in Databricks
+    # Apps the user_id is the caller's email. Sanitize once and use the safe
+    # label everywhere a memory namespace is built so reads and writes stay
+    # consistent (the raw email is kept for tracing / custom_outputs).
+    namespace_user_id = sanitize_namespace_label(user_id)
+
     config: dict[str, Any] = {"configurable": {"thread_id": thread_id}}
-    if user_id:
-        config["configurable"]["user_id"] = user_id
+    if namespace_user_id:
+        config["configurable"]["user_id"] = namespace_user_id
 
     input_state: dict[str, Any] = {
         "messages": to_chat_completions_input([i.model_dump() for i in request.input]),
@@ -196,7 +203,7 @@ async def stream_handler(
             config["configurable"]["user_store"] = user_store
             config["configurable"]["agent_store"] = agent_store
 
-            user_namespace = (USER_NAMESPACE_PREFIX, user_id) if user_id else None
+            user_namespace = (USER_NAMESPACE_PREFIX, namespace_user_id) if namespace_user_id else None
             memory_preamble = await build_memory_preamble(
                 user_store=user_store,
                 user_namespace=user_namespace,
